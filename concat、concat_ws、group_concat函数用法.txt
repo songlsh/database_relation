@@ -1,0 +1,101 @@
+concat、concat_ws、group_concat函数用法
+一、concat()函数可以连接一个或者多个字符串
+
+　　CONCAT(str1,str2,…) 返回结果为连接参数产生的字符串。如有任何一个参数为NULL ，则返回值为 NULL。
+
+　　select concat('11','22','33');     112233
+
+二、CONCAT_WS(separator,str1,str2,...) 
+
+　　是CONCAT()的特殊形式。第一个参数是其它参数的分隔符。分隔符的位置放在要连接的两个字符串之间。分隔符可以是一个字符串，也可以是其它参数。
+
+　   select concat_ws(',','11','22','33');   　11,22,33
+
+三、group_concat()分组拼接函数
+
+　　group_concat([DISTINCT] 要连接的字段 [Order BY ASC/DESC 排序字段] [Separator '分隔符'])
+
+　　对下面的一组数据使用 group_concat()
+
+　　| id |name
+
+　　|1 | 10|
+　　|1 | 20|
+　　|1 | 20|
+　　|2 | 20|
+　　|3 | 200   |
+　　|3 | 500   |
+
+　　1、select id,group_concat(name) from aa group by id;
+
+　　|1 | 10,20,20|
+　　|2 | 20 |
+　　|3 | 200,500|
+
+　　2、select id,group_concat(name separator ';') from aa group by id;
+
+　　|1 | 10;20;20 |
+　　|2 | 20|
+　　|3 | 200;500   |
+
+　　3、select id,group_concat(name order by name desc) from aa group by id;
+
+　　|1 | 20,20,10   |
+　　|2 | 20|
+　　|3 | 500,200|
+
+　　4、select id,group_concat(distinct name) from aa group by id;
+
+　　|1 | 10,20|
+　　|2 | 20   |
+　　|3 | 200,500 |
+
+四、string_egg()函数
+方法1：
+select deptno, string_agg(ename, ',') from jinbo.employee group by deptno;
+
+ deptno |  string_agg  
+--------+--------------
+     20 | JONES
+     30 | ALLEN,MARTIN
+
+方法2：
+select deptno, array_to_string(array_agg(ename),',') from jinbo.employee group by deptno;
+ deptno | array_to_string 
+--------+-----------------
+     20 | JONES
+     30 | ALLEN,MARTIN
+select deptno, string_agg(ename, ',' order by ename desc) from jinbo.employee group by deptno;
+ deptno |  string_agg  
+--------+--------------
+     20 | JONES
+     30 | MARTIN,ALLEN
+3、按数组格式输出使用 array_agg
+
+select deptno, array_agg(ename) from jinbo.employee group by deptno;
+ deptno |   array_agg    
+--------+----------------
+     20 | {JONES}
+     30 | {ALLEN,MARTIN}
+
+4、array_agg 去重元素，例如查询所有的部门
+
+select array_agg(distinct deptno) from jinbo.employee;
+array_agg 
+-----------
+ {20,30}
+
+
+#不仅可以去重，还可以排序
+select array_agg(distinct deptno order by deptno desc) from jinbo.employee;
+ array_agg 
+-----------
+ {30,20}
+
+5、array_agg 排序再array取值，例如查询每个部门第一个入职的人
+
+select deptno, (array_agg(ename order by hiredate asc))[1] from jinbo.employee group by deptno;
+ deptno | array_agg 
+--------+-----------
+     20 | JONES
+     30 | ALLEN
